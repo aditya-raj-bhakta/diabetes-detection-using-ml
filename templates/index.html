@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Disease Predicton</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; padding-top: 20px; }
+        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .result-card { display: none; }
+        .probability-high { color: #dc3545; font-weight: bold; }
+        .probability-low { color: #198754; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="text-center mb-4">
+        <h1 class="display-5">⚕️ Multi-Disease Prediction Framework</h1>
+        <p class="lead">Enter clinical data to estimate disease probabilities.</p>
+        <div class="alert alert-warning">
+            <strong>Disclaimer:</strong> This is a prototype for academic use only. Not a diagnostic tool.
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Input Form -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    Patient Data
+                </div>
+                <div class="card-body">
+                    <form id="predictionForm">
+                        <div class="row g-3">
+                            <!-- Basic Info -->
+                            <div class="col-md-6">
+                                <label class="form-label">Age</label>
+                                <input type="number" class="form-control" name="age" value="50" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Sex (1=Male, 0=Female)</label>
+                                <select class="form-select" name="sex">
+                                    <option value="1">Male</option>
+                                    <option value="0">Female</option>
+                                </select>
+                            </div>
+
+                            <!-- Vitals / Common -->
+                            <div class="col-md-6">
+                                <label class="form-label">BMI</label>
+                                <input type="number" step="0.1" class="form-control" name="bmi" value="25.0">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Blood Glucose (mg/dL)</label>
+                                <input type="number" class="form-control" name="glucose" value="100">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Blood Pressure (Trestbps/Diastolic)</label>
+                                <input type="number" class="form-control" name="trestbps" value="120">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Cholesterol (mg/dL)</label>
+                                <input type="number" class="form-control" name="chol" value="200">
+                            </div>
+
+                            <!-- Heart Specific -->
+                            <div class="col-12"><hr><h6>Heart Specific</h6></div>
+                            <div class="col-md-4">
+                                <label class="form-label">Max Heart Rate (thalach)</label>
+                                <input type="number" class="form-control" name="thalach" value="150">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">CP (Chest Pain 0-3)</label>
+                                <input type="number" class="form-control" name="cp" value="0">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Exang (Exercise Angina 0/1)</label>
+                                <input type="number" class="form-control" name="exang" value="0">
+                            </div>
+
+                            <!-- Diabetes Specific -->
+                            <div class="col-12"><hr><h6>Diabetes Specific</h6></div>
+                            <div class="col-md-4">
+                                <label class="form-label">Insulin</label>
+                                <input type="number" class="form-control" name="insulin" value="80">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Pregnancies</label>
+                                <input type="number" class="form-control" name="n_pregnant" value="0">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Diabetes Pedigree (DPF)</label>
+                                <input type="number" step="0.01" class="form-control" name="dpf" value="0.5">
+                            </div>
+
+                            <!-- Liver Specific -->
+                            <div class="col-12"><hr><h6>Liver Specific</h6></div>
+                            <div class="col-md-6">
+                                <label class="form-label">Total Bilirubin</label>
+                                <input type="number" step="0.1" class="form-control" name="total_bilirubin" value="1.0">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Albumin</label>
+                                <input type="number" step="0.1" class="form-control" name="albumin" value="3.5">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Alk. Phos.</label>
+                                <input type="number" class="form-control" name="alkaline_phosphotase" value="85">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Alamine Aminotransferase</label>
+                                <input type="number" class="form-control" name="alamine_aminotransferase" value="30">
+                            </div>
+                        </div>
+
+                        <div class="mt-4 d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="predictBtn">
+                                Calculate Risk
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Column -->
+        <div class="col-lg-4">
+            <div class="card result-card" id="resultCard">
+                <div class="card-header bg-success text-white">
+                    Processing Complete
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Prediction Results</h5>
+                    <p class="card-text text-muted">Estimated probabilities based on provided data.</p>
+                    
+                    <ul class="list-group list-group-flush" id="resultList">
+                        <!-- Results injected here -->
+                    </ul>
+                    
+                    <div class="mt-3 text-center">
+                        <small>Higher percentage = Higher risk</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-3" id="loadingSpinner" style="display:none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p>Analyzing data...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {};
+    formData.forEach((value, key) => {
+        data[key] = parseFloat(value) || 0;
+    });
+    
+    // Show spinner, hide results
+    document.getElementById('loadingSpinner').style.display = 'block';
+    document.getElementById('resultCard').style.display = 'none';
+    document.getElementById('predictBtn').disabled = true;
+    
+    try {
+        const response = await fetch('/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const results = await response.json();
+        
+        // Populate results
+        const list = document.getElementById('resultList');
+        list.innerHTML = '';
+        
+        for (const [disease, prob] of Object.entries(results)) {
+            let badgeClass = 'bg-secondary';
+            let probVal = parseFloat(prob.replace('%', ''));
+            
+            if (!isNaN(probVal)) {
+               if (probVal > 50) badgeClass = 'bg-danger';
+               else if (probVal > 20) badgeClass = 'bg-warning text-dark';
+               else badgeClass = 'bg-success';
+            }
+            
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+            li.innerHTML = `
+                ${disease}
+                <span class="badge ${badgeClass} rounded-pill">${prob}</span>
+            `;
+            list.appendChild(li);
+        }
+        
+        document.getElementById('resultCard').style.display = 'block';
+    } catch (error) {
+        alert("Error: " + error.message);
+    } finally {
+        document.getElementById('loadingSpinner').style.display = 'none';
+        document.getElementById('predictBtn').disabled = false;
+    }
+});
+</script>
+
+</body>
+</html>
